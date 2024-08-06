@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
         int num_samples = binaryHeader.NUM_OF_SAMPLES;
 
         std::streamsize traceSize = num_samples * sizeof(float) + 240;
-        int numberOfTraces = (fileSize - 3600) / traceSize;           
+        unsigned long numberOfTraces = (fileSize - 3600) / traceSize;           
         
         std::cout << std::string(80, '#') << std::endl;
         std::cout << "File " << filename << ". Basic SEG-Y File Info:" << std::endl;
@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
             }
             std::cout << std::endl;
 
-            long i = 0;
+            unsigned long i = 0;
             do {               
                 traceHeader TH;
                 std::streamoff offset = 3600 + (numTraces[i] - 1) * (240 + num_samples * 4);
@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
             
             if (vm.count("stats")) {
                
-               for (int i = 0; i < numberOfTraces; i++) {
+               for (unsigned long i = 0; i < numberOfTraces; i++) {
               
                   traceHeader TH;
                   std::streamoff offset = 3600 + i * (240 + num_samples * 4);
@@ -175,10 +175,9 @@ int main(int argc, char* argv[]) {
                         hdr_stats[j].update(val);
                     }
                   }
-                  progressBar(i, numberOfTraces);
-                  clearProgressBar();
+                  progressBar(i, numberOfTraces);                  
                }  
-      
+               clearProgressBar();
                std::cout << std::setw(DEFAULT_COL_WIDTH) << std::right << "Header" << " ";
                std::cout << std::setw(DEFAULT_COL_WIDTH) << std::right << "Minimum" << " ";
                std::cout << std::setw(DEFAULT_COL_WIDTH) << std::right << "Maximum" << " ";

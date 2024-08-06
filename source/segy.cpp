@@ -113,7 +113,7 @@ float getSpecifiedTraceHeaderValue(const traceHeader& TH, int byteNo, int number
     const uint8_t* ptr = reinterpret_cast<const uint8_t*>(&TH) + (byteNo - 1);
 
     // Interpret the 4 bytes at the given shift as an int32_t
-    unsigned int word_int32 = 0;
+    int32_t word_int32 = 0;
     int16_t word_int16 = 0;
     float word_float = 0.0;
 

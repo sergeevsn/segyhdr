@@ -10,7 +10,7 @@ struct Statistics {
     double max = std::numeric_limits<double>::lowest();
     double mean = 0.0;
     double m2 = 0.0;
-    size_t count = 0;
+    unsigned long count = 0;
 
     void update(double value) {
         count++;
