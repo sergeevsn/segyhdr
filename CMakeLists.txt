@@ -14,9 +14,11 @@ set(HEADERS
 
 include_directories(include)
 
-set(Boost_INCLUDE_DIRS /home/ssn/Dev/CPPlibs/boost_1_82_0)
-set(Boost_LIBRARY_DIRS /home/ssn/Dev/CPPlibs/boost_1_82_0/stage/lib)
-set(Boost_LIBRARIES boost_program_options)
+find_package(Boost REQUIRED COMPONENTS program_options)
+
+#set(Boost_INCLUDE_DIRS C:/Program Files/boost_1_82_0)
+#set(Boost_LIBRARY_DIRS  C:/Program Files/boost_1_82_0/stage/lib)
+#set(Boost_LIBRARIES boost_program_options)
 
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
