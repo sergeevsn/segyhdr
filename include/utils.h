@@ -89,3 +89,13 @@ std::vector<int> parse_number_params(const std::string& param_string) {
 
     return numbers;
 }
+
+bool isVectorInData(const std::vector<std::vector<double>>& data, const std::vector<double>& vec) {
+    return std::find(data.begin(), data.end(), vec) != data.end();
+}
+
+void addUniqueVector(std::vector<std::vector<double>>& data, const std::vector<double>& vec) {
+    if (!isVectorInData(data, vec)) {
+        data.push_back(vec);
+    }
+}

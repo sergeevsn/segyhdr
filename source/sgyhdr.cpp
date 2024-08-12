@@ -8,6 +8,8 @@
 #include <cmath>
 #include <iomanip>
 #include <limits>
+#include <map>
+#include <numeric>
 #include <unordered_map>
 #include <boost/program_options.hpp>
 #include "segy.h"
@@ -32,15 +34,20 @@ int main(int argc, char* argv[]) {
     desc.add_options()            
         ("binary,b", "print file's binary header")
         ("traces,t", po::value<std::string>(), "specific traces mode")
+        ("unique,u", "get unique header collocation values")
         ("stats,s", "all traces statistics mode")
         ("headers,h", po::value<std::string>(), "headers to scan. Format: <B1>:<F1>,<B2>:<F2>,... where <Bn> is starting byte,\
     <Fn> is number format. 0-int16,1-int32,2-IEEE Float,3-IBM Float")     
         ("filename", po::value<std::string>(), "input file name");
 
     po::positional_options_description p;
+
+    int count = 0;
+
     p.add("filename", 1);
 
     po::variables_map vm;
+    
     try {
         po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
         po::notify(vm);
@@ -50,6 +57,15 @@ int main(int argc, char* argv[]) {
         std::cerr << desc << std::endl;
         return 1;
     }
+
+    if (vm.count("traces")) count++;
+    if (vm.count("stats")) count++;
+    if (vm.count("unique")) count++;
+    if (count > 1) {
+        std::cerr << "ERROR: Only one of 'traces', 'unique' and 'stats' keys can be provided." << std::endl;
+        return 1;
+    }
+    
 
     if (argc == 1 || vm.count("help")) {
         std::cout << desc << std::endl;
@@ -62,7 +78,7 @@ int main(int argc, char* argv[]) {
         std::ifstream file(filename, std::ios::binary | std::ios::ate);
         if (!file.is_open()) {
             std::cerr << "Failed to open file: " << filename << std::endl;
-            return -1;
+            return 1;
         }
       
         // Get the file size
@@ -126,7 +142,8 @@ int main(int argc, char* argv[]) {
                 bytes_formats = parseHdrParams(headers);
             }
         else bytes_formats = DEFAULT_HEADERS;
-        if (numTraces.size() > 0) {             
+
+        if (vm.count("traces")) {             
 
             std::cout << std::setw(DEFAULT_COL_WIDTH) << std::right << "TraceNo" << " ";            
 
@@ -154,7 +171,7 @@ int main(int argc, char* argv[]) {
             }
             while (i < numTraces.size() && numTraces[i] < numberOfTraces);           
         }
-        else {
+        if (vm.count("stats"))  {
             std::vector<Statistics> hdr_stats;
             
             if (vm.count("stats")) {
@@ -194,6 +211,43 @@ int main(int argc, char* argv[]) {
 
                }
             }
+        }
+        if (vm.count("unique")) {
+            std::cout << std::setw(DEFAULT_COL_WIDTH) << std::right << "Number" << " ";            
+
+            for (int j = 0; j < bytes_formats.size(); j++) {
+                std::cout << std::setw(DEFAULT_COL_WIDTH) << std::right << std::right << "B" + std::to_string(bytes_formats[j].first)+\
+                  ":F" + std::to_string(bytes_formats[j].second)  << " ";
+            }
+            std::cout << std::endl;
+
+            // Maps to store grouped data and counts
+            std::vector<std::vector<double>> data;
+            
+            for (unsigned long i = 0; i < numberOfTraces; i++) {
+              
+                traceHeader TH;
+                std::streamoff offset = 3600 + i * (240 + num_samples * 4);
+                file.seekg(offset, std::ios::beg);
+                file.read(reinterpret_cast<char*>(&TH), sizeof(traceHeader));
+                if (need_swap) traceHeaderSwapEndian(TH);                
+                std::vector<double> values;
+                for (int j = 0; j < bytes_formats.size(); j++) {                    
+                    float val = getSpecifiedTraceHeaderValue(TH, bytes_formats[j].first, bytes_formats[j].second);                    
+                    values.push_back(val);
+                }    
+                addUniqueVector(data, values);                
+                progressBar(i, numberOfTraces); 
+            }
+            clearProgressBar();           
+            
+            for (int i = 0; i < data.size(); i++) {
+                std::cout << std::setw(DEFAULT_COL_WIDTH) << std::right << i << " ";                                
+                for (int j = 0; j < data[i].size(); j ++) {
+                    std::cout << std::setw(DEFAULT_COL_WIDTH) << std::right << std::fixed << std::setprecision(DEFAULT_PRECISION) << data[i][j] << " ";
+                }   
+                std::cout << std::endl;
+            }    
         }
        
     }
